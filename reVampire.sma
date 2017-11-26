@@ -1,22 +1,34 @@
 /*
-  Официальная поддержка: https://dev-cs.ru/resources/334/
+  Источник: https://neugomon.ru/threads/124/
+  Официальная поддержка: 
+  GitHub: https://github.com/LEISER307/reAPI-Plugins/reVampire.sma
+  
+  Original autor by MakapoH . AcE
+  Thanks for wopox1337
+  Autor edit: L4D2 aka LEISER
+  
+  Settings:
+	Для блокировки на опр. картах, создайте в папке: configs/vampire_block_maps.ini и запишите туда карты.
 */
+
 #include <amxmodx>
 #include <reapi>
 
-//#define FFA_MODE 			// Поддержка CSDM FFA.
-#define HP_BODY 14.0 		// Кол-во hp за убийство.
-#define HP_HS 19.0 			// Кол-во hp за убийство в голову.
-#define HP_MAX 100.0 		// Максимальное Кол-во hp. (Выше этого значения hp прибавлять не будет)
+/******** НАСТРОЙКИ ********/
+
+//#define FFA_MODE 			// Поддержка CSDM FFA.	(Default: off)
+#define MSGHUD "+%.0f ХП"	// Показ сообщения прибовления ХП (Default: Добавлено: +%.0f ХП)
+#define HUD_Y	0.52		// HUD сообщения смещение по Y
+#define HUD_X	0.51		// HUD сообщения смещение по X
+#define HP_BODY	14.0 		// Кол-во hp за убийство.	(Default: 10.0)
+#define HP_HS	19.0 		// Кол-во hp за убийство в голову.	(Default: 15.0)
+#define HP_MAX	100.0 		// Максимальное Кол-во hp. (Выше этого значения hp прибавлять не будет) (Default: 100.0)
 #define KILL_SOUND 			// Звук при убийстве противника.
 #define HUD_MESSAGE 		// HUD Сообщение о прибавке hp. (Если у игрока hp = HP_MAX то сообщения не будет)
-//#define SCREEN_FADE 		// Мерцание экрана при убийстве. (Если игрок слепой то мерцать не будет)
-//#define FLAG_ACCESS (ADMIN_BAN|ADMIN_LEVEL_H)	// Выдавать только указанным флагам.
-//#define BLOCK_MAPS 		// Блокировка вампира на определённых картах. Создайте фаил vampire_block_maps.ini и запишите туда карты.
+//#define FLAG_ACCESS (ADMIN_BAN|ADMIN_LEVEL_H)	// Выдавать только указанным флагам.	(Default: off)
+//#define BLOCK_MAPS 		// Блокировка вампира на определённых картах.	(Default: off)
 
-#if defined SCREEN_FADE
-	new g_MsgScreenFade
-#endif
+/******** КОНЕЦ ********/
 
 #if defined BLOCK_MAPS
 	new bool:gBlockMaps
@@ -30,7 +42,7 @@
 #endif
 
 public plugin_init() {
-	register_plugin("RE Vampire", "1.0.7-2a", "MakapoH, AcE, REVO, L4D2")
+	register_plugin("RE Vampire", "1.0.7-2b", "MakapoH , AcE")
 	
 	#if defined BLOCK_MAPS
 		if (gBlockMaps) {
@@ -39,10 +51,6 @@ public plugin_init() {
 	
 	#if defined BLOCK_MAPS
 		}
-	#else
-		#if defined SCREEN_FADE
-			g_MsgScreenFade = get_user_msgid("ScreenFade")
-		#endif
 	#endif
 }
 
@@ -63,28 +71,20 @@ public CBasePlayer_Killed_Post(const victim, killer, iGib) {
 	killer_HP = get_entvar(killer, var_health)
 	TempHP = get_member(victim, m_bHeadshotKilled) ? HP_HS : HP_BODY
 	
+	if(!(killer_HP < HP_MAX)) return;
+	
 	#if defined KILL_SOUND
-		if (killer_HP < HP_MAX) client_cmd(killer, "spk spk buttons/bell1")
+		client_cmd(killer, "spk spk buttons/bell1")
 	#endif
 	
 	#if defined HUD_MESSAGE
-		if (killer_HP < HP_MAX) {
-			static SyncHudMsg
-			if (!SyncHudMsg) SyncHudMsg = CreateHudSyncObj()
-			set_hudmessage(0, 255, 0, 0.52, 0.51, 0, 6.0, 2.0)
-			ShowSyncHudMsg(killer, SyncHudMsg, "+%.0f ХП", TempHP)
-		}
+		static SyncHudMsg
+		if (!SyncHudMsg) SyncHudMsg = CreateHudSyncObj()
+		set_hudmessage(0, 255, 0, HUD_Y, HUD_X, 0, 6.0, 2.0)
+		ShowSyncHudMsg(killer, SyncHudMsg, MSGHUD, TempHP)
 	#endif
 	
 	set_entvar(killer, var_health, ((killer_HP += TempHP) > HP_MAX) ? HP_MAX : killer_HP)
-	
-	#if defined SCREEN_FADE
-		if (get_gametime() >= Float:get_member(killer, m_blindStartTime) + Float:get_member(killer, m_blindFadeTime)) {
-			message_begin(MSG_ONE, g_MsgScreenFade, .player = killer)
-			write_short(1<<10); write_short(1<<10); write_short(0x0000); write_byte(0)
-			write_byte(0); write_byte(200); write_byte(75); message_end()
-		}
-	#endif
 }
 
 #if defined BLOCK_MAPS
