@@ -1,7 +1,7 @@
 /*
   Источник: https://neugomon.ru/threads/124/
   Официальная поддержка: 
-  GitHub: https://github.com/LEISER307/reAPI-Plugins/reVampire.sma
+  GitHub: https://github.com/LEISER307/reAPI-Plugins/blob/master/reVampire.sma
   
   Original autor by MakapoH . AcE
   Thanks for wopox1337
