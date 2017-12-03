@@ -4,7 +4,7 @@
   GitHub: https://github.com/LEISER307/reAPI-Plugins/reVampire.sma
   
   Original autor by MakapoH , AcE
-  Thanks for wopox1337
+  Thanks for wopox1337, Artist_666
   Modification Author: L4D2 aka LEISER
   
   Settings:
@@ -35,21 +35,25 @@
 	
 	[*] Версия 1.0.8q
 		- Изменен алгоритм блокировки карт
+	
+	[*] Версия 1.0.8-1
+		- Изменен код воспроизведения звука
 */
 
 #include <amxmodx>
 #include <reapi>
 
 /******** НАСТРОЙКИ ********/
-#define BLOCK_MAPS 			// Блокировка вампира на определённых картах.	(Default: off)
-//#define FLAG_ACCESS (ADMIN_BAN|ADMIN_LEVEL_H)	// Выдавать только указанным флагам.	(Default: off)
+#define BLOCK_MAPS 			// Блокировка вампира на определённых картах. (Чтобы выключить закоментируйте: //#define BLOCK_MAPS)
+//#define FLAG_ACCESS (ADMIN_BAN|ADMIN_LEVEL_H)	// Выдавать только указанным флагам. (Чтобы выключить закоментируйте: //#define FLAG_ACCESS)
 
 //#define FFA_MODE 			// Поддержка CSDM FFA.	(Default: off)
 #define HP_BODY	14.0 		// Кол-во hp за убийство.	(Default: 10.0)
 #define HP_HS	19.0 		// Кол-во hp за убийство в голову.	(Default: 15.0)
 #define HP_MAX	100.0 		// Максимальное Кол-во hp. (Выше этого значения hp прибавлять не будет).	(Default: 100.0)
-#define KILL_SOUND 			// Звук при убийстве противника.
-#define HUD_MESSAGE 		// HUD Сообщение о прибавке hp.
+#define KILL_SOUND 			// Звук при убийстве противника. (Чтобы выключить закоментируйте: //#define KILL_SOUND)
+#define SOUND "buttons/bell1.wav"	// Звук при убийстве противника.	ctzf/heal.wav
+#define HUD_MESSAGE 		// HUD Сообщение о прибавке hp. (Чтобы выключить закоментируйте: //#define HUD_MESSAGE)
 
 // Настройки HUD
 #define MSGHUD "+%.0f ХП"	// Текст Hud сообщения о прибавление ХП (Default: Добавлено: +%.0f ХП)
@@ -61,7 +65,7 @@ public plugin_init() {
 		load_block_maps();
 	#endif
 	
-	register_plugin("RE Vampire", "1.0.8q", "MakapoH , AcE");
+	register_plugin("RE Vampire", "1.0.8_Beta-1", "MakapoH , AcE");
 	RegisterHookChain(RG_CBasePlayer_Killed, "CBasePlayer_Killed_Post", true);
 }
 
@@ -70,7 +74,7 @@ load_block_maps() {
 	new path[64]; get_localinfo("amxx_configsdir", path, charsmax(path));
 	
 	format(path, charsmax(path), "%s/vampire_block_maps.ini", path);
-	new bool:stop, file = fopen(path, "rt");
+	new bool:stop, file; file = fopen(path, "rt");
 	
 	if (!file_exists(path)) {
 		new error[100];
@@ -115,7 +119,7 @@ public CBasePlayer_Killed_Post(const victim, killer, iGib) {
 	if(!(killer_HP < HP_MAX)) return;
 	
 	#if defined KILL_SOUND
-		client_cmd(killer, "spk spk buttons/bell1");
+		emit_sound(killer, 0, SOUND, 1.0, 1.0, 0, 100);
 	#endif
 	
 	#if defined HUD_MESSAGE
