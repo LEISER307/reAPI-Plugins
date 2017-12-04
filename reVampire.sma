@@ -1,14 +1,14 @@
 /*
   Источник: https://neugomon.ru/threads/124/
   Официальная поддержка: 
-  GitHub: https://github.com/LEISER307/reAPI-Plugins/reVampire.sma
+  GitHub: https://github.com/LEISER307/reAPI-Plugins/blob/master/reVampire.sma
   
   Original autor by MakapoH , AcE
-  Thanks for wopox1337, Artist_666
+  Thanks for wopox1337, Artist_666, Neugomon
   Modification Author: L4D2 aka LEISER
   
   Settings:
-	Для блокировки на опр. картах, создайте в папке: configs/vampire_block_maps.ini и запишите туда карты.
+	Для блокировки на опр. картах, создайте в папке "configs": vampire_block_maps.ini и запишите туда карты.
 	
   Changelog:
 	[*] Версия 1.0.4
@@ -37,7 +37,10 @@
 		- Изменен алгоритм блокировки карт
 	
 	[*] Версия 1.0.8-1
-		- Изменен код воспроизведения звука
+		- Измнен код воспроизведения звука
+		
+	[*] Версия 1.0.8-2
+		- Fix. Падения сервера из за блок листа
 */
 
 #include <amxmodx>
@@ -51,8 +54,12 @@
 #define HP_BODY	14.0 		// Кол-во hp за убийство.	(Default: 10.0)
 #define HP_HS	19.0 		// Кол-во hp за убийство в голову.	(Default: 15.0)
 #define HP_MAX	100.0 		// Максимальное Кол-во hp. (Выше этого значения hp прибавлять не будет).	(Default: 100.0)
-#define KILL_SOUND 			// Звук при убийстве противника. (Чтобы выключить закоментируйте: //#define KILL_SOUND)
-#define SOUND "buttons/bell1.wav"	// Звук при убийстве противника.	ctzf/heal.wav
+
+#define KILL_SOUND 			// Вкл\Выкл - Воспроизведения звука, получения хп (Чтобы выключить закоментируйте: //#define KILL_SOUND)
+#if defined KILL_SOUND 
+	#define SOUND "buttons/bell1.wav"	// Звук.
+#endif
+
 #define HUD_MESSAGE 		// HUD Сообщение о прибавке hp. (Чтобы выключить закоментируйте: //#define HUD_MESSAGE)
 
 // Настройки HUD
@@ -65,36 +72,34 @@ public plugin_init() {
 		load_block_maps();
 	#endif
 	
-	register_plugin("RE Vampire", "1.0.8_Beta-1", "MakapoH , AcE");
+	register_plugin("RE Vampire", "1.0.8-2", "MakapoH , AcE");
 	RegisterHookChain(RG_CBasePlayer_Killed, "CBasePlayer_Killed_Post", true);
 }
 
 load_block_maps() {
 	new curmap[64]; get_mapname(curmap, charsmax(curmap));
 	new path[64]; get_localinfo("amxx_configsdir", path, charsmax(path));
-	
-	format(path, charsmax(path), "%s/vampire_block_maps.ini", path);
-	new bool:stop, file; file = fopen(path, "rt");
-	
-	if (!file_exists(path)) {
+	new file[128]; formatex(file, charsmax(file), "%s/vampire_block_maps.ini", path);
+	new bool:stop, file_id; file_id = fopen(file, "rt");
+
+	if(!file_exists(path)) {
 		new error[100];
+		log_to_file("addons/amxmodx/logs/error_log_block-maps.txt", "Отсутствует файл (vampire_block_maps.ini), в папке: %s", path)
 		formatex(error, charsmax(error), "Cannot load customization file %s!", path);
 		set_fail_state(error);
 		return;
 	}
 	
-	if(file) {
-		new i, sizes, buffer[64]; i = -1; sizes = file_size(path, 1);
-
-		while(++i < sizes) {
-			fgets(file, buffer, charsmax(buffer)); trim(buffer);
+	if(file_id) {
+		new buffer[64];
+		while(!feof(file_id)) {
+			fgets(file_id, buffer, charsmax(buffer)); trim(buffer);
 			if(!buffer[0] || buffer[0] == ';' || buffer[0] == '/') continue;
 			if(!equali(buffer, curmap)) continue;
 			stop = true;
-			fclose(file);
 			break;
 		}
-		fclose(file);
+		fclose(file_id);
 	}
 	if(stop) pause("ad"); return;
 }
