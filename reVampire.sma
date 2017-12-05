@@ -41,10 +41,15 @@
 		
 	[*] Версия 1.0.8-2
 		- Fix. Падения сервера из за блок листа
+	
+	[*] Версия 1.0.8-3
+		- Fix Fix.. Stable v.
 */
 
 #include <amxmodx>
 #include <reapi>
+
+#define VERSION "1.0.8-3"
 
 /******** НАСТРОЙКИ ********/
 #define BLOCK_MAPS 			// Блокировка вампира на определённых картах. (Чтобы выключить закоментируйте: //#define BLOCK_MAPS)
@@ -69,39 +74,41 @@
 
 public plugin_init() {
 	#if defined BLOCK_MAPS
-		load_block_maps();
+		new curmap[64]; get_mapname(curmap, charsmax(curmap));
+		new dir[64]; get_localinfo("amxx_configsdir", dir, charsmax(dir));
+		new file[128]; formatex(file, charsmax(file), "%s/vampire_block_maps.ini", dir);
+		new bool:stop, file_id = fopen(file, "rt");
+		
+		if(!file_exists(file)) {
+			new error[100];
+			log_to_file("addons/amxmodx/logs/reVampire-error.txt", "Отсутствует файл (vampire_block_maps.ini), в папке: %s", dir);
+			formatex(error, charsmax(error), "Cannot load customization file (vampire_block_maps.ini), in the folder: %s!", dir);
+			set_fail_state(error);
+			return;
+		}
+		
+		if(file_id) {
+			while(!feof(file_id)) {
+				new buffer[64];
+				fgets(file_id, buffer, charsmax(buffer)); trim(buffer);
+				
+				server_print("^n|============================================|");
+				server_print("|=== Loading Block maps reVampir %s ===|", VERSION);
+				server_print("|============================================|^n");
+				
+				if(!buffer[0] || buffer[0] == ';' || buffer[0] == '/') continue;
+				if(!equali(buffer, curmap)) continue;
+				
+				stop = true;
+				break;
+			}
+			fclose(file_id);
+		}
+		if(stop) pause("ad");
 	#endif
 	
-	register_plugin("RE Vampire", "1.0.8-2", "MakapoH , AcE");
+	register_plugin("re Vampir", VERSION, "MakapoH , AcE");
 	RegisterHookChain(RG_CBasePlayer_Killed, "CBasePlayer_Killed_Post", true);
-}
-
-load_block_maps() {
-	new curmap[64]; get_mapname(curmap, charsmax(curmap));
-	new path[64]; get_localinfo("amxx_configsdir", path, charsmax(path));
-	new file[128]; formatex(file, charsmax(file), "%s/vampire_block_maps.ini", path);
-	new bool:stop, file_id; file_id = fopen(file, "rt");
-
-	if(!file_exists(path)) {
-		new error[100];
-		log_to_file("addons/amxmodx/logs/error_log_block-maps.txt", "Отсутствует файл (vampire_block_maps.ini), в папке: %s", path)
-		formatex(error, charsmax(error), "Cannot load customization file %s!", path);
-		set_fail_state(error);
-		return;
-	}
-	
-	if(file_id) {
-		new buffer[64];
-		while(!feof(file_id)) {
-			fgets(file_id, buffer, charsmax(buffer)); trim(buffer);
-			if(!buffer[0] || buffer[0] == ';' || buffer[0] == '/') continue;
-			if(!equali(buffer, curmap)) continue;
-			stop = true;
-			break;
-		}
-		fclose(file_id);
-	}
-	if(stop) pause("ad"); return;
 }
 
 public CBasePlayer_Killed_Post(const victim, killer, iGib) {
